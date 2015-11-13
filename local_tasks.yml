@@ -1,0 +1,84 @@
+---
+- name: Download and inslall local packages and docker images
+  hosts: 127.0.0.1
+  connection: local
+
+  tasks:
+  - include_vars: common.yml
+
+  - name: Make local directorys
+    file: path={{item}} state=directory mode=0755
+    with_items:
+      - remote_files/images/tsuru
+      - remote_files/images/progrium
+      - remote_files/images/gliderlabs
+      - local_files
+
+  - name: Verify ubuntu docker package download
+    stat: path=remote_files/docker-engine_{{docker_version}}-0~trusty_amd64.deb
+    register: ubuntu_docker_package_status
+
+  - name: Get ubuntu docker package
+    get_url: >
+      url=https://apt.dockerproject.org/repo/pool/main/d/docker-engine/docker-engine_{{docker_version}}-0~trusty_amd64.deb
+      dest=remote_files/
+      validate_certs=False
+    when: distribution == "ubuntu" and ubuntu_docker_package_status.stat.exists == False
+
+  - name: Verify CentOS7 docker package download
+    stat: path=remote_files/docker-engine-{{docker_version}}-1.el7.centos.x86_64.rpm
+    register: centos_docker_package_status
+
+  - name: Get CentOS7 docker packages
+    get_url: >
+      url=https://yum.dockerproject.org/repo/main/centos/7/Packages/docker-engine-{{docker_version}}-1.el7.centos.x86_64.rpm
+      dest=remote_files/
+      validate_certs=False
+    when: distribution == "centos" and centos_docker_package_status.stat.exists == False
+
+  - name: Verify docker-machine download
+    stat: path=local_files/docker-machine_darwin-amd64.zip
+    register: docker_machine_status
+
+  - name: Download docker-machine
+    get_url: >
+      url=https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip
+      dest=local_files/
+    when: docker_machine_status.stat.exists == False
+
+  - name: Unzip docker-machine
+    unarchive: >
+      src=local_files/docker-machine_darwin-amd64.zip
+      dest=local_files/
+      mode=0755
+    when: docker_machine_status.stat.exists == False
+
+  - name: Verify if docker-machine VM exist
+    command: docker-machine ls -q |grep tsuruDev
+    register: machine_status
+
+  - name: Create a docker machine VM
+    command: ./local_files/docker-machine create -d virtualbox tsuruDev
+    when: machine_status.stdout != "tsuruDev"
+
+  - name: Config docker ENVs
+    command: docker-machine config tsuruDev
+    register: docker_env
+    ignore_errors: True
+
+  - name: Pull docker images
+    environment:
+      PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+    command: docker {{ docker_env.stdout }} pull {{item}}
+    with_flattened:
+       - "{{docker_images}}"
+
+  - name: Export docker images
+    environment:
+      PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+    command: docker save -o remote_files/images/{{item}}.tar {{item}}
+    with_flattened:
+      - "{{docker_images}}"
+
+  - name: Zip local files
+    command: tar -zcf remote_files.tar.gz remote_files

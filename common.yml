@@ -1,0 +1,16 @@
+---
+distribution: ubuntu
+docker_version: 1.9.0
+docker_images:
+  - [ 'progrium/consul',
+      'gliderlabs/registrator',
+      'tsuru/consul-template',
+      'mongo',
+      'redis',
+      'registry',
+      'tsuru/router-hipache',
+      'tsuru/tsuru-api',
+      'tsuru/archive-server',
+      'tsuru/gandalf',
+      'swarm'
+    ]

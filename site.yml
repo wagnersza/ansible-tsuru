@@ -1,0 +1,7 @@
+---
+- name: Install dokcer hosts, swarm and tsuru
+  hosts: docker-servers
+
+- include: local_tasks.yml
+- include: config_hosts.yml
+# - include: start_tsuru.yml

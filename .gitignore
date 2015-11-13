@@ -1,0 +1,7 @@
+.vagrant
+packages/*
+dockerized-setup
+files/*
+local_files
+remote_files
+remote_files.tar.gz

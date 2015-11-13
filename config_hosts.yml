@@ -1,0 +1,44 @@
+---
+- name: Config hosts
+  hosts: docker-servers
+
+  handlers:
+  - name: Restart docker
+    service: name=docker state=restarted
+    sudo: yes
+
+  tasks:
+  - include_vars: common.yml
+
+  - name: Copy docker images
+    synchronize: src=remote_files.tar.gz dest=/tmp/
+
+  - name: Unarchive files
+    unarchive: >
+      copy=no
+      src=/tmp/remote_files.tar.gz
+      dest=/tmp/
+      mode=0755
+
+  - name: Install docker ubuntu package
+    apt: deb=/tmp/remote_files/docker-engine_{{docker_version}}-0~trusty_amd64.deb
+    sudo: yes
+    when: distribution == "ubuntu"
+
+  - name: Install docker CentOS7 package
+    yum: =/tmp/remote_files/docker-engine-{{docker_version}}-1.el7.centos.x86_64.rpm
+    sudo: yes
+    when: distribution == "centos"
+
+  - name: Configure docker package
+    template: src=templates/default_docker dest=/etc/default/docker
+    sudo: yes
+    when: distribution == "ubuntu"
+    notify:
+      - restart docker
+
+  - name: Load docker images
+    command: docker load -i /tmp/remote_files/images/{{item}}.tar
+    sudo: yes
+    with_flattened:
+      - "{{docker_images}}"
