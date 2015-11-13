@@ -11,14 +11,7 @@
   - include_vars: common.yml
 
   - name: Copy docker images
-    synchronize: src=remote_files.tar.gz dest=/tmp/
-
-  - name: Unarchive files
-    unarchive: >
-      copy=no
-      src=/tmp/remote_files.tar.gz
-      dest=/tmp/
-      mode=0755
+    synchronize: src=remote_files dest=/tmp/
 
   - name: Install docker ubuntu package
     apt: deb=/tmp/remote_files/docker-engine_{{docker_version}}-0~trusty_amd64.deb

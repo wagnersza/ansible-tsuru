@@ -79,6 +79,3 @@
     command: docker save -o remote_files/images/{{item}}.tar {{item}}
     with_flattened:
       - "{{docker_images}}"
-
-  - name: Zip local files
-    command: tar -zcf remote_files.tar.gz remote_files
