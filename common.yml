@@ -14,3 +14,4 @@ docker_images:
       'tsuru/gandalf',
       'swarm'
     ]
+advertise_ip: "{{ facter_ipaddress_eth1 }}"
