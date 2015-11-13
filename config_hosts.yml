@@ -30,11 +30,24 @@
     notify:
       - restart docker
 
+  - name: Verify if docker images are loaded
+    command: docker images -q {{item}}
+    sudo: yes
+    with_flattened:
+      - "{{docker_images}}"
+    register: load_image_status
+
   - name: Load docker images
     command: docker load -i /tmp/remote_files/images/{{item}}.tar
     sudo: yes
     with_flattened:
       - "{{docker_images}}"
+    when: load_image_status|failed
+
+  - name: Verify if consul container are running
+    command: docker ps -qf name=consul
+    sudo: yes
+    register: consul_container_status
 
   - name: Run consul container
     sudo: yes
@@ -52,3 +65,4 @@
       -p 8500:8500 \
       -p 53:53/udp \
       progrium/consul -server -advertise {{advertise_ip}} -bootstrap
+    when: consul_container_status|failed
