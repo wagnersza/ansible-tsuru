@@ -63,7 +63,7 @@
 
   # create a docker-machine VM
   - name: Verifies if docker-machine VM exist
-    command: docker-machine ls -q |grep tsuruDev
+    command: ./local_files/docker-machine ls -q |grep tsuruDev
     register: machine_status
 
   - name: Create a docker machine VM
@@ -72,9 +72,15 @@
 
   # pull docker images
   - name: Config docker ENVs
-    command: docker-machine config tsuruDev
+    command: ./local_files/docker-machine config tsuruDev
     register: docker_env
     ignore_errors: True
+
+  - name: Check was pull images made
+    command: docker {{ docker_env.stdout }} images -q {{item}}
+    with_flattened:
+      - "{{docker_images}}"
+    register: local_image_status
 
   - name: Pull docker images
     environment:
@@ -82,6 +88,7 @@
     command: docker {{ docker_env.stdout }} pull {{item}}
     with_flattened:
        - "{{docker_images}}"
+    when: local_image_status|failed
 
   # export docker images
   - name: Export docker images
