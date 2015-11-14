@@ -17,7 +17,7 @@
       - local_files
 
   # download docker package
-  - name: Verify ubuntu docker package download
+  - name: Verifies ubuntu docker package download
     stat: path=remote_files/docker-engine_{{docker_version}}-0~trusty_amd64.deb
     register: ubuntu_docker_package_status
 
@@ -28,7 +28,7 @@
       validate_certs=False
     when: distribution == "ubuntu" and ubuntu_docker_package_status.stat.exists == False
 
-  - name: Verify CentOS7 docker package download
+  - name: Verifies CentOS7 docker package download
     stat: path=remote_files/docker-engine-{{docker_version}}-1.el7.centos.x86_64.rpm
     register: centos_docker_package_status
 
@@ -40,7 +40,7 @@
     when: distribution == "centos" and centos_docker_package_status.stat.exists == False
 
   # download and unarchive docker-machine
-  - name: Verify docker-machine download
+  - name: Verifies docker-machine download
     stat: path=local_files/docker-machine_darwin-amd64.zip
     register: docker_machine_status
 
@@ -50,7 +50,7 @@
       dest=local_files/
     when: docker_machine_status.stat.exists == False
 
-  - name: Verify docker-machine unarchive files
+  - name: Verifies docker-machine unarchive files
     stat: path=local_files/docker-machine
     register: docker_machine_unarchive_status
 
@@ -62,7 +62,7 @@
     when: docker_machine_unarchive_status.stat.exists == False
 
   # create a docker-machine VM
-  - name: Verify if docker-machine VM exist
+  - name: Verifies if docker-machine VM exist
     command: docker-machine ls -q |grep tsuruDev
     register: machine_status
 
