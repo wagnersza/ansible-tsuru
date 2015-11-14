@@ -87,6 +87,6 @@
   - name: Export docker images
     environment:
       PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
-    command: docker save -o remote_files/images/{{item}}.tar {{item}}
+    command: docker {{ docker_env.stdout }} save -o remote_files/images/{{item}}.tar {{item}}
     with_flattened:
       - "{{docker_images}}"
