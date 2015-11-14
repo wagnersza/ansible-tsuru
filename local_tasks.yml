@@ -50,12 +50,16 @@
       dest=local_files/
     when: docker_machine_status.stat.exists == False
 
+  - name: Verify docker-machine unarchive files
+    stat: path=local_files/docker-machine
+    register: docker_machine_unarchive_status
+
   - name: Unzip docker-machine
     unarchive: >
       src=local_files/docker-machine_darwin-amd64.zip
       dest=local_files/
       mode=0755
-    when: docker_machine_status.stat.exists == False
+    when: docker_machine_unarchive_status.stat.exists == False
 
   # create a docker-machine VM
   - name: Verify if docker-machine VM exist
