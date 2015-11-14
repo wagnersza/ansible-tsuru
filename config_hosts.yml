@@ -89,3 +89,24 @@
       --restart=always \
       gliderlabs/registrator -ip {{advertise_ip}} -resync 5 consul://{{advertise_ip}}:8500
     when: consul_registrator_container_status|failed
+
+  # run consul-template container on servers
+  - name: Verify if consul-template container are running
+    command: docker ps -qf name=consul-template
+    sudo: yes
+    register: consul_template_container_status
+
+  - name: Run consul-template container
+    sudo: yes
+    command: >
+      docker run -d \
+      --name consul-template \
+      -e SERVICE_NAME="consul-template" \
+      --restart=always \
+      -v /var/run/docker.sock:/tmp/docker.sock \
+      -v /data/tsuru:/data/tsuru \
+      -v /data/router:/data/router \
+      -v /data/gandalf:/data/gandalf \
+      -v /data/archive-server:/data/archive-server \
+      tsuru/consul-template
+    when: consul_template_container_status|failed
