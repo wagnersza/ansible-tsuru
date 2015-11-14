@@ -3,16 +3,20 @@
   hosts: docker-servers
 
   handlers:
+  # handler restart docker
   - name: Restart docker
     service: name=docker state=restarted
     sudo: yes
 
   tasks:
+  # load vars
   - include_vars: common.yml
 
+  # synchronize local images with servers
   - name: Copy docker images
     synchronize: src=remote_files dest=/tmp/
 
+  # install docker package on servers
   - name: Install docker ubuntu package
     apt: deb=/tmp/remote_files/docker-engine_{{docker_version}}-0~trusty_amd64.deb
     sudo: yes
@@ -23,6 +27,7 @@
     sudo: yes
     when: distribution == "centos"
 
+  # config docker package on servers
   - name: Configure docker package
     template: src=templates/default_docker dest=/etc/default/docker
     sudo: yes
@@ -30,6 +35,7 @@
     notify:
       - restart docker
 
+  # load docker images
   - name: Verify if docker images are loaded
     command: docker images -q {{item}}
     sudo: yes
@@ -44,6 +50,7 @@
       - "{{docker_images}}"
     when: load_image_status|failed
 
+  # run consul container on servers
   - name: Verify if consul container are running
     command: docker ps -qf name=consul
     sudo: yes
@@ -66,3 +73,19 @@
       -p 53:53/udp \
       progrium/consul -server -advertise {{advertise_ip}} -bootstrap
     when: consul_container_status|failed
+
+  # run consul-registrator container on servers
+  - name: Verify if consul-registrator container are running
+    command: docker ps -qf name=registrator
+    sudo: yes
+    register: consul_registrator_container_status
+
+  - name: Run consul-registrator container
+    sudo: yes
+    command: >
+      docker run -d -v /var/run/docker.sock:/tmp/docker.sock \
+      --name registrator \
+      -e SERVICE_NAME="registrator" \
+      --restart=always \
+      gliderlabs/registrator -ip {{advertise_ip}} -resync 5 consul://{{advertise_ip}}:8500
+    when: consul_registrator_container_status|failed
