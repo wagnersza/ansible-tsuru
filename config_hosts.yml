@@ -14,7 +14,7 @@
 
   # synchronize local images with servers
   - name: Copy docker images
-    synchronize: src=remote_files dest=/tmp/
+    copy: src=remote_files dest=/tmp/
 
   # install docker package on servers
   - name: Install docker ubuntu package
@@ -33,29 +33,23 @@
     sudo: yes
     when: distribution == "ubuntu"
     notify:
-      - restart docker
+      - Restart docker
 
   # load docker images
-  - name: Verify if docker images are loaded
-    command: docker images -q {{item}}
-    sudo: yes
-    with_flattened:
-      - "{{docker_images}}"
-    register: load_image_status
-
   - name: Load docker images
     command: docker load -i /tmp/remote_files/images/{{item}}.tar
     sudo: yes
     with_flattened:
       - "{{docker_images}}"
-    when: load_image_status|failed
 
   # run consul container on servers
   - name: Verify if consul container are running
-    command: docker ps -qf name=consul
+    shell: docker inspect consul | grep running
     sudo: yes
+    ignore_errors: yes
     register: consul_container_status
 
+  - command: echo {{consul_container_status.stdout}}
   - name: Run consul container
     sudo: yes
     command: >
@@ -71,11 +65,12 @@
       -p 8500:8500 \
       -p 53:53/udp \
       progrium/consul -server -advertise {{advertise_ip}} -bootstrap
-    when: consul_container_status|failed
+    when: consul_container_status.stdout == ""
 
   # run consul-registrator container on servers
   - name: Verify if consul-registrator container are running
-    command: docker ps -qf name=registrator
+    shell: docker inspect registrator | grep running
+    ignore_errors: yes
     sudo: yes
     register: consul_registrator_container_status
 
@@ -86,11 +81,12 @@
       --name registrator \
       --restart=always \
       gliderlabs/registrator -ip {{advertise_ip}} -resync 5 consul://{{advertise_ip}}:8500
-    when: consul_registrator_container_status|failed
+    when: consul_registrator_container_status.stdout == ""
 
   # run consul-template container on servers
   - name: Verify if consul-template container are running
-    command: docker ps -qf name=consul-template
+    shell: docker inspect consul-template | grep running
+    ignore_errors: yes
     sudo: yes
     register: consul_template_container_status
 
@@ -106,4 +102,4 @@
       -v /data/gandalf:/data/gandalf \
       -v /data/archive-server:/data/archive-server \
       tsuru/consul-template
-    when: consul_template_container_status|failed
+    when: consul_template_container_status.stdout == ""
