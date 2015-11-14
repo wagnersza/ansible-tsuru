@@ -61,7 +61,6 @@
     command: >
       docker run -d -v /data/consul:/data/consul \
       --name consul \
-      -e SERVICE_NAME="consul" \
       --restart=always \
       -p 8300:8300 \
       -p 8301:8301 \
@@ -85,7 +84,6 @@
     command: >
       docker run -d -v /var/run/docker.sock:/tmp/docker.sock \
       --name registrator \
-      -e SERVICE_NAME="registrator" \
       --restart=always \
       gliderlabs/registrator -ip {{advertise_ip}} -resync 5 consul://{{advertise_ip}}:8500
     when: consul_registrator_container_status|failed
@@ -101,7 +99,6 @@
     command: >
       docker run -d \
       --name consul-template \
-      -e SERVICE_NAME="consul-template" \
       --restart=always \
       -v /var/run/docker.sock:/tmp/docker.sock \
       -v /data/tsuru:/data/tsuru \
