@@ -91,9 +91,16 @@
     when: local_image_status|failed
 
   # export docker images
+  - name: Check that images have been exported
+    command: ls remote_files/images/{{item}}.tar
+    with_flattened:
+      - "{{docker_images}}"
+    register: local_export_status
+
   - name: Export docker images
     environment:
       PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     command: docker {{ docker_env.stdout }} save -o remote_files/images/{{item}}.tar {{item}}
     with_flattened:
       - "{{docker_images}}"
+    when: local_export_status|failed
