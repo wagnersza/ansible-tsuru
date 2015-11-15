@@ -93,6 +93,7 @@
     with_flattened:
       - "{{docker_images}}"
     register: local_export_status
+    ignore_errors: True
 
   - name: Export docker images
     environment:
