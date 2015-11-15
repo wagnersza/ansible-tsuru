@@ -1,1 +1,37 @@
 ---
+- name: Start tsuru
+  hosts: docker-servers
+
+  tasks:
+  # load vars
+  - include_vars: common.yml
+
+  # run mongo container on servers
+  - name: Verify if mongo container are running
+    shell: docker inspect mongo | grep running
+    ignore_errors: yes
+    sudo: yes
+    register: mongo_container_status
+
+  - name: Run mongo container
+    sudo: yes
+    command: >
+      docker run -d \
+      --name mongo \
+      --restart=always \
+      -p 27017:27017 \
+      mongo --replSet rStsuru
+    when: mongo_container_status.stdout == ""
+
+  # config mongo replSet
+  - name: replSet initiate
+    shell: docker exec mongo mongo --eval "JSON.stringify(rs.initiate());"
+    sudo: yes
+    run_once: true
+
+  - name: Adds server to replSet
+    sudo: yes
+    shell: docker exec mongo mongo --eval "JSON.stringify(rs.add('{{item}}:27017'))"
+    with_items:
+    - "{{ groups['docker-servers'] }}"
+    run_once: true
