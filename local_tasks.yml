@@ -55,10 +55,7 @@
     register: docker_machine_unarchive_status
 
   - name: Unzip docker-machine
-    unarchive: >
-      src=local_files/docker-machine_darwin-amd64.zip
-      dest=local_files/
-      mode=0755
+    shell: cd local_files && unzip docker-machine_darwin-amd64.zip
     when: docker_machine_unarchive_status.stat.exists == False
 
   # create a docker-machine VM
